@@ -15,6 +15,7 @@ class EvePreviewApp:
     def __init__(self, root):
         self.root = root
         self.root.title("EVE Online Window Previews")
+        self.root.attributes("-topmost", True)
         self.win_data = {}  # win_id: {btn, label}
         self.update_thumbnails()
 
