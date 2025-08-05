@@ -20,14 +20,17 @@ and change search from "EVE" to anything else ))
 | `subprocess` | Run CLI tools like `xwd`, `xdotool`, `xwininfo` |
 | `threading`, `os`, `time`, `tempfile` | Window management      |
 
+    pip install -r Pillow
+
+
 ### 🧰 Linux CLI Tools (X11-native)
 | Tool                             | Purpose                                  |
 | -------------------------------- | ---------------------------------------- |
 | `xwininfo`                       | Find windows matching "EVE" pattern      |
 | `xwd`                            | Dump raw screenshots of specific windows |
-| `ImageMagick` (`magick convert`) | Convert `.xwd` to `.png` for GUI display |
+| `ImageMagick`                    | Convert `.xwd` to `.png` for GUI display |
 | `xdotool`                        | Raise/focus the clicked window           |
-
+| `Tkinter`, `tc`                  | GUI for Python                           |
 
 ## 🚀 Setup & Usage
 
@@ -77,7 +80,8 @@ Run the script:
 - Optional support for per-window process names (Steam/Proton helper)
 - Better performance with caching
 
+Tested on archlinux/XFCE4(x11)/Steam
 
-Created by ArcheryTXS 
+Created by ArcheryTXS ///
 
 Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview (KDE-Plasma only!)
