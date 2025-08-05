@@ -7,7 +7,7 @@ https://www.eveonline.com/
 Using simple linux tools, general idea of window managing plus some Ai help for coding
 
 This probably will work with any open window if you tweak
-and chage search param from "EVE" to anything else ))
+and change search from "EVE" to anything else ))
 
 
 ## 🛠️ Tools Used
