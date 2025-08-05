@@ -1,6 +1,6 @@
 # 🪞 EVE Online X11 Window Preview
 
-Attemnt to create linux alternative for eve-o-preview 
+Attemnt to create linux alternative eve-o-preview 
 for multiboxing control in EvE Online
 https://www.eveonline.com/
 
