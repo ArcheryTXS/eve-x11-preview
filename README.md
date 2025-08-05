@@ -4,10 +4,10 @@ Attemnt to create linux alternative eve-o-preview
 for multiboxing control in EvE Online
 https://www.eveonline.com/
 
-Using simple linux tools, general idea of window managing plus some Ai help for coding
+Using simple linux tools, general idea of window managing plus some Ai help for coding (and this summary)
 
 This probably will work with any open window if you tweak
-and chage search param from "EVE" to anything else ))
+and change search from "EVE" to anything else ))
 
 
 ## 🛠️ Tools Used
@@ -20,14 +20,17 @@ and chage search param from "EVE" to anything else ))
 | `subprocess` | Run CLI tools like `xwd`, `xdotool`, `xwininfo` |
 | `threading`, `os`, `time`, `tempfile` | Window management      |
 
+    pip install -r Pillow
+
+
 ### 🧰 Linux CLI Tools (X11-native)
 | Tool                             | Purpose                                  |
 | -------------------------------- | ---------------------------------------- |
 | `xwininfo`                       | Find windows matching "EVE" pattern      |
 | `xwd`                            | Dump raw screenshots of specific windows |
-| `ImageMagick` (`magick convert`) | Convert `.xwd` to `.png` for GUI display |
+| `ImageMagick`                    | Convert `.xwd` to `.png` for GUI display |
 | `xdotool`                        | Raise/focus the clicked window           |
-
+| `Tkinter`, `tc`                  | GUI for Python                           |
 
 ## 🚀 Setup & Usage
 
@@ -77,7 +80,8 @@ Run the script:
 - Optional support for per-window process names (Steam/Proton helper)
 - Better performance with caching
 
+Tested on archlinux/XFCE4(x11)/Steam
 
-Created by ArcheryTXS 
+Created by ArcheryTXS ///
 
-Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview
+Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview (KDE-Plasma only!)
