@@ -1,10 +1,14 @@
-# 🪞 EVE Online X11 Window Preview (XFCE/Linux)
+# 🪞 EVE Online X11 Window Preview
 
-Attemnt to create linux native eve-o-preview
-for EvEOnline multiboxing control
+Attemnt to create linux alternative for eve-o-preview 
+for multiboxing control in EvE Online
+https://www.eveonline.com/
 
-Using simple tools. This probably will work with any open window if you tweak
+Using simple linux tools, general idea of window managing plus some Ai help for coding
+
+This probably will work with any open window if you tweak
 and chage search param from "EVE" to anything else ))
+
 
 ## 🛠️ Tools Used
 
@@ -73,5 +77,6 @@ Run the script:
 - Better performance with caching
 
 
-Created by ArcheryTXS
+Created by ArcheryTXS 
+
 Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview
