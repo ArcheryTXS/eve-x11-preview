@@ -80,4 +80,4 @@ Run the script:
 
 Created by ArcheryTXS 
 
-Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview
+Inspired by similar idea of u/Fitzsimmons - https://codeberg.org/JSFitzsimmons/eve-k-preview (KDE-Plasma only!)
