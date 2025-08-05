@@ -48,6 +48,7 @@ Run the script:
     ./eve-x11-preview.py
 
 #### 💡 You can change the refresh rate (default 2 seconds) by editing the constant inside the script.
+#### 💡 Manually set "Above all windows" if it fails to do by script
 
    
 ## ⚙️ How It Works
