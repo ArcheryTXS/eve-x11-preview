@@ -4,7 +4,7 @@ Attemnt to create linux alternative eve-o-preview
 for multiboxing control in EvE Online
 https://www.eveonline.com/
 
-Using simple linux tools, general idea of window managing plus some Ai help for coding
+Using simple linux tools, general idea of window managing plus some Ai help for coding (and this summary)
 
 This probably will work with any open window if you tweak
 and change search from "EVE" to anything else ))
