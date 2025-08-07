@@ -1,103 +1,144 @@
+#!/usr/bin/env python3
+
 import subprocess
 import os
 import tkinter as tk
 from PIL import Image, ImageTk
-from time import time
+import logging
 
-# Config
+# --- Configuration ---
 PREVIEW_DIR = "/tmp/eve_previews"
-UPDATE_INTERVAL = 2000  # in milliseconds
-THUMBNAIL_SIZE = "200x150"
+UPDATE_INTERVAL_MS = 2000  # Time in milliseconds
+THUMBNAIL_SIZE = "200x150" # WxH for the thumbnail
+GRID_COLUMNS = 3          # Number of thumbnails per row
 
+# --- Setup ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 os.makedirs(PREVIEW_DIR, exist_ok=True)
+
 
 class EvePreviewApp:
     def __init__(self, root):
+        """Initializes the application window and data structures."""
         self.root = root
-        self.root.title("EVE Online Window Previews")
+        self.root.title("EVE Online Previews")
         self.root.attributes("-topmost", True)
-        self.win_data = {}  # win_id: {btn, label}
-        self.update_thumbnails()
-
-    def get_eve_windows(self):
-        output = subprocess.check_output(["wmctrl", "-lx"]).decode()
-        eve_windows = []
-        for line in output.strip().split("\n"):
-            parts = line.split()
-            if len(parts) < 5:
-                continue
-            win_id, class_full = parts[0], parts[2]
-            title = " ".join(parts[4:])
-            if "steam_app_" in class_full and "EVE" in title and "Launcher" not in title:
-                eve_windows.append((win_id, title))
-        return eve_windows
-
-    def capture_thumbnail(self, win_id, out_path):
+        
+        # A dictionary to store window data: {win_id: {"btn": widget, "label": widget}}
+        self.win_data = {}
+        
+    def _get_eve_windows(self):
+        """Finds all EVE Online client windows using wmctrl."""
         try:
-            xwd_proc = subprocess.Popen(
-                ["xwd", "-silent", "-id", win_id],
-                stdout=subprocess.PIPE
-            )
+            command = ["wmctrl", "-lx"]
+            output = subprocess.check_output(command).decode("utf-8")
+            eve_windows = []
+            for line in output.strip().split("\n"):
+                parts = line.split(maxsplit=4)
+                if len(parts) < 5:
+                    continue
+                win_id, win_class, title = parts[0], parts[2], parts[4]
+                # Filter for EVE clients, excluding launchers
+                if "steam_app_" in win_class and "EVE -" in title:
+                    # Clean up title for display
+                    char_name = title.replace("EVE - ", "").strip()
+                    eve_windows.append((win_id, char_name))
+            return dict(eve_windows)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logging.error("`wmctrl` command failed. Is it installed and in your pc?")
+            return {}
+
+    def _capture_thumbnail(self, win_id, out_path):
+        """Captures a specific window's content using ImageMagick."""
+        try:
+            # Using 'import' from ImageMagick is often more reliable than xwd
+            command = [
+                "import", "-window", win_id, 
+                "-resize", THUMBNAIL_SIZE,
+                "-quality", "85", # Add quality setting for JPG/PNG
+                out_path
+            ]
             subprocess.run(
-                ["magick", "xwd:-", "-resize", THUMBNAIL_SIZE, out_path],
-                stdin=xwd_proc.stdout,
+                command,
+                check=True,
+                timeout=3,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                timeout=5,
-                check=True
             )
-            xwd_proc.stdout.close()
-            return os.path.exists(out_path) and os.path.getsize(out_path) > 10000
-        except Exception as e:
-            print(f"Capture failed for {win_id}: {e}")
+            return True
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
+            logging.warning(f"Capture failed for window {win_id}: {e}")
+            return False
+        except FileNotFoundError:
+            logging.error("`import` command failed. Is ImageMagick installed?")
+            # Stop trying if the command doesn't exist
+            self.root.after_cancel(self.update_job)
             return False
 
-    def focus_window(self, win_id):
+    def _focus_window(self, win_id):
+        """Brings the specified window to the foreground."""
         subprocess.run(["wmctrl", "-ia", win_id])
 
-    def update_thumbnails(self):
-        current_windows = dict(self.get_eve_windows())
+    def _update_gui(self):
+        """The main loop to update, add, and remove window previews."""
+        current_windows = self._get_eve_windows()
+        
+        # 1. Remove widgets for closed windows
+        closed_ids = self.win_data.keys() - current_windows.keys()
+        for win_id in closed_ids:
+            self.win_data[win_id]["btn"].destroy()
+            self.win_data[win_id]["label"].destroy()
+            del self.win_data[win_id]
 
-        # Remove closed windows
-        for win_id in list(self.win_data.keys()):
-            if win_id not in current_windows:
-                self.win_data[win_id]["btn"].destroy()
-                self.win_data[win_id]["label"].destroy()
-                del self.win_data[win_id]
-
-        # Update or create thumbnails
+        # 2. Update or create widgets for current windows
         for idx, (win_id, title) in enumerate(current_windows.items()):
             img_path = os.path.join(PREVIEW_DIR, f"{win_id}.png")
-
-            self.capture_thumbnail(win_id, img_path)
+            
+            # Attempt to capture the thumbnail
+            if not self._capture_thumbnail(win_id, img_path):
+                continue # Skip update if capture fails
 
             try:
                 img = Image.open(img_path)
                 thumb = ImageTk.PhotoImage(img)
-            except Exception as e:
-                print(f"Image load failed for {win_id}: {e}")
+            except (FileNotFoundError, Image.UnidentifiedImageError) as e:
+                logging.warning(f"Could not load image {img_path}: {e}")
                 continue
 
+            row = (idx // GRID_COLUMNS) * 2
+            col = idx % GRID_COLUMNS
+            
             if win_id not in self.win_data:
-                btn = tk.Button(self.root, image=thumb,
-                                command=lambda wid=win_id: self.focus_window(wid))
-                btn.image = thumb
-                btn.grid(row=idx // 3 * 2, column=idx % 3)
+                # Create new button and label
+                btn = tk.Button(
+                    self.root, 
+                    image=thumb,
+                    command=lambda wid=win_id: self._focus_window(wid)
+                )
+                label = tk.Label(self.root, text=title[:30], font=("", 12)) # Truncate long names
+                
+                btn.grid(row=row, column=col, padx=5, pady=2)
+                label.grid(row=row + 1, column=col, pady=2)
 
-                label = tk.Label(self.root, text=title[:30])
-                label.grid(row=idx // 3 * 2 + 1, column=idx % 3)
-
-                self.win_data[win_id] = {
-                    "btn": btn,
-                    "label": label,
-                }
+                self.win_data[win_id] = {"btn": btn, "label": label}
             else:
-                self.win_data[win_id]["btn"].config(image=thumb)
-                self.win_data[win_id]["btn"].image = thumb
+                # Update existing button image
+                btn = self.win_data[win_id]["btn"]
+                btn.config(image=thumb)
+            
+            # IMPORTANT: Keep a reference to the image to prevent garbage collection
+            self.win_data[win_id]["btn"].image = thumb
+        
+        # Schedule the next update
+        self.update_job = self.root.after(UPDATE_INTERVAL_MS, self._update_gui)
 
-        self.root.after(UPDATE_INTERVAL, self.update_thumbnails)
+    def run(self):
+        """Starts the application."""
+        self._update_gui() # Initial call
+        self.root.mainloop()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = EvePreviewApp(root)
-    root.mainloop()
+    app.run()
