@@ -27,10 +27,9 @@ and change search from "EVE" to anything else ))
 | Tool                             | Purpose                                  |
 | -------------------------------- | ---------------------------------------- |
 | `xwininfo`                       | Find windows matching "EVE" pattern      |
-| `xwd`                            | Dump raw screenshots of specific windows |
 | `ImageMagick`                    | Convert `.xwd` to `.png` for GUI display |
 | `xdotool`                        | Raise/focus the clicked window           |
-| `Tkinter`, `tc`                  | GUI for Python                           |
+| `Tkinter`, `tk`                  | GUI for Python                           |
 
 ## 🚀 Setup & Usage
 
@@ -80,7 +79,7 @@ Run the script:
 - Optional support for per-window process names (Steam/Proton helper)
 - Better performance with caching
 
-Tested on archlinux/XFCE4(x11)/Steam
+Tested on archlinux 6.15.9-arch1-1 / XFCE4(xorg) / Steam(proton)
 
 Created by ArcheryTXS ///
 
