@@ -64,7 +64,6 @@ Run the script:
 
 ## ⚠️ Known Issues & Limitations
 
-- Same picture preview for all open window for period of time before refresh catches up
 - Previews may flicker briefly during refresh (due to image reloading)
 - Not a true "live feed" — it's periodic screenshots
 - Requires X11 (not compatible with Wayland)
@@ -72,14 +71,12 @@ Run the script:
 
 ## 🧭 Future Improvements
 
-- Add instalation script to check for needed libs and tools
+- Add keyboard shortcuts 
+- Add instalation script?
 - Better refresh/alternatives
-- Smarter layout/grid preview positioning
-- Add CLI flags for refresh rate, window match pattern, size
-- Optional support for per-window process names (Steam/Proton helper)
-- Better performance with caching
 
-Tested on archlinux 6.15.9-arch1-1 / XFCE4(xorg) / Steam(proton)
+
+Tested on archlinux 6.15.9-arch1-1 / XFCE4.20 (xorg) / Steam(proton)
 
 Created by ArcheryTXS ///
 
