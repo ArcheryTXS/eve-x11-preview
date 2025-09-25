@@ -5,12 +5,13 @@ import os
 import tkinter as tk
 from PIL import Image, ImageTk
 import logging
-from Xlib import X, display
+from Xlib import X, display, error
 
 # --- Configuration ---
 PREVIEW_DIR = "/tmp/eve_previews"
-UPDATE_INTERVAL_MS = 2000
-THUMBNAIL_SIZE = "200x150"
+# Lower interval for "near-live" updates. 250ms = 4 FPS.
+UPDATE_INTERVAL_MS = 250
+THUMBNAIL_SIZE = "200x150" # This is used as a max-size tuple for PIL
 GRID_COLUMNS = 3
 
 # --- Setup ---
@@ -26,6 +27,8 @@ class EvePreviewApp:
         self.root.attributes("-topmost", True)
         self.disp = display.Display()
         self.win_data = {}
+        # Create the mss screen capture object once for performance
+        #self.sct = mss.mss()
 
     def _get_eve_windows(self):
         """Finds all EVE Online client windows using wmctrl."""
@@ -46,49 +49,53 @@ class EvePreviewApp:
             return {}
 
     def _capture_thumbnail(self, win_id, out_path):
-        """Captures a specific window's content using ImageMagick."""
+        """Captures a window's content directly, even when obscured."""
         try:
-            command = [
-                "import", "-window", win_id,
-                "-resize", THUMBNAIL_SIZE,
-                "-quality", "85",
-                out_path
-            ]
-            subprocess.run(
-                command, check=True, timeout=3,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
+            # Get the window object from its ID
+            window = self.disp.create_resource_object('window', int(win_id, 16))
+
+            # Get window geometry
+            geom = window.get_geometry()
+
+            # Get the raw pixel data from the server for the window
+            # This works even if the window is covered
+            raw_image = window.get_image(0, 0, geom.width, geom.height, X.ZPixmap, 0xffffffff)
+            
+            # Create a PIL Image from the raw data
+            img = Image.frombytes("RGB", (geom.width, geom.height), raw_image.data, "raw", "BGRX")
+
+            # Resize it to a thumbnail
+            thumbnail_tuple = (int(THUMBNAIL_SIZE.split('x')[0]), int(THUMBNAIL_SIZE.split('x')[1]))
+            img.thumbnail(thumbnail_tuple)
+
+            # Save the thumbnail
+            img.save(out_path, "PNG")
             return True
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
-            logging.warning(f"Capture failed for window {win_id}: {e}")
+
+        except (error.BadWindow, error.BadDrawable):
+            logging.warning(f"Failed to capture {win_id}, window may have closed.")
             return False
-        except FileNotFoundError:
-            logging.error("`import` command failed. Is ImageMagick installed?")
-            if hasattr(self, 'update_job'): self.root.after_cancel(self.update_job)
+        except Exception as e:
+            logging.error(f"An unexpected error during X11 capture for {win_id}: {e}")
             return False
 
     def _focus_window(self, win_id):
-        """Brings the specified window to the foreground using direct X11 commands."""
+        """Brings the specified window to the foreground using wmctrl for reliability."""
         try:
-            # Create a resource object for the window ID
-            window = self.disp.create_resource_object('window', int(win_id, 16))
-
-            # 1. Raise the window to the top of the stack
-            window.raise_window()
-
-            # 2. Give the window input focus
-            self.disp.set_input_focus(window, X.RevertToParent, X.CurrentTime)
-
-            # Ensure the commands are sent to the X server immediately
-            self.disp.sync()
-
-        except Exception as e:
-            logging.error(f"Failed to focus window {win_id} with Xlib: {e}")
+            command = ["wmctrl", "-ia", win_id]
+            subprocess.run(
+                command, check=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logging.error(f"Failed to focus window {win_id} with wmctrl: {e}")
+            logging.error("Please ensure 'wmctrl' is installed and in your system's PATH.")
 
     def _update_gui(self):
         """The main loop to update, add, and remove window previews."""
         current_windows = self._get_eve_windows()
 
+        # Clean up closed windows
         closed_ids = self.win_data.keys() - current_windows.keys()
         for win_id in list(closed_ids):
             if win_id in self.win_data:
@@ -96,6 +103,7 @@ class EvePreviewApp:
                 self.win_data[win_id]["label"].destroy()
                 del self.win_data[win_id]
 
+        # Update and add new windows
         for idx, (win_id, title) in enumerate(current_windows.items()):
             img_path = os.path.join(PREVIEW_DIR, f"{win_id}.png")
 
@@ -113,6 +121,7 @@ class EvePreviewApp:
             col = idx % GRID_COLUMNS
 
             if win_id not in self.win_data:
+                # Create new widgets
                 btn = tk.Button(
                     self.root,
                     image=thumb,
@@ -121,13 +130,17 @@ class EvePreviewApp:
                 label = tk.Label(self.root, text=title[:30], font=("", 12))
                 btn.grid(row=row, column=col, padx=5, pady=2)
                 label.grid(row=row + 1, column=col, pady=2)
-                self.win_data[win_id] = {"btn": btn, "label": label}
+                self.win_data[win_id] = {"btn": btn, "label": label, "thumb": thumb}
             else:
+                # Update existing widgets
                 btn = self.win_data[win_id]["btn"]
                 btn.config(image=thumb)
+                self.win_data[win_id]["thumb"] = thumb # Keep a reference
 
+            # IMPORTANT: Keep a reference to the image to prevent garbage collection
             self.win_data[win_id]["btn"].image = thumb
 
+        # Schedule the next update
         self.update_job = self.root.after(UPDATE_INTERVAL_MS, self._update_gui)
 
     def run(self):

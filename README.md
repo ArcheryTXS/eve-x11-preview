@@ -1,7 +1,7 @@
 # 🪞 EVE Online X11 Window Preview
 
-Attemnt to create linux alternative eve-o-preview 
-for multiboxing control in EvE Online
+Attemnt to create Linux alternative eve-o-preview 
+for multiboxing clients control in EvE Online for Xorg/X11
 https://www.eveonline.com/
 
 Using simple linux tools, general idea of window managing plus some Ai help for coding (and this summary)
@@ -73,7 +73,7 @@ Run the script:
 
 - Add keyboard shortcuts 
 - Add instalation script?
-- Better refresh/alternatives
+
 
 
 Tested on archlinux 6.15.9-arch1-1 / XFCE4.20 (xorg) / Steam(proton)
